@@ -1,15 +1,12 @@
 
 import gym
-import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-
+import tensorflow as tf
 from tensorflow.python.keras import Sequential
 from tensorflow.python.keras.layers import Dense
 from tensorflow.keras.optimizers import Adam
-
-from replay_buffer import ReplayBuffer
 
 
 def DeepQNetwork(lr, num_actions, input_dims, fc1, fc2):
@@ -20,6 +17,37 @@ def DeepQNetwork(lr, num_actions, input_dims, fc1, fc2):
     q_net.compile(optimizer=Adam(learning_rate=lr), loss='mse')
 
     return q_net
+
+
+class ReplayBuffer:
+    def __init__(self, size, input_shape):
+        self.size = size
+        self.counter = 0
+        self.state_buffer = np.zeros((self.size, input_shape), dtype=np.float32)
+        self.action_buffer = np.zeros(self.size, dtype=np.int32)
+        self.reward_buffer = np.zeros(self.size, dtype=np.float32)
+        self.new_state_buffer = np.zeros((self.size, input_shape), dtype=np.float32)
+        self.terminal_buffer = np.zeros(self.size, dtype=np.bool_)
+
+    def store_tuples(self, state, action, reward, new_state, done):
+        idx = self.counter % self.size
+        self.state_buffer[idx] = state
+        self.action_buffer[idx] = action
+        self.reward_buffer[idx] = reward
+        self.new_state_buffer[idx] = new_state
+        self.terminal_buffer[idx] = done
+        self.counter += 1
+
+    def sample_buffer(self, batch_size):
+        max_buffer = min(self.counter, self.size)
+        batch = np.random.choice(max_buffer, batch_size, replace=False)
+        state_batch = self.state_buffer[batch]
+        action_batch = self.action_buffer[batch]
+        reward_batch = self.reward_buffer[batch]
+        new_state_batch = self.new_state_buffer[batch]
+        done_batch = self.terminal_buffer[batch]
+
+        return state_batch, action_batch, reward_batch, new_state_batch, done_batch
 
 
 class Agent:
@@ -158,21 +186,15 @@ class Agent:
 
         env.close()
 
+def main():
 
+    env = gym.make("LunarLander-v2")
+   
+    num_episodes = 100
+    graph = True
 
-env = gym.make("LunarLander-v2")
-spec = gym.spec("LunarLander-v2")
-train = 0
-test = 1
-num_episodes = 100
-graph = True
-
-file_type = 'tf'
-file = 'saved_networks/dqn_model104'
-
-dqn_agent = Agent(lr=0.00075, discount_factor=0.99, num_actions=4, epsilon=1.0, batch_size=64, input_dims=8)
-
-if train and not test:
+    dqn_agent = Agent(lr=0.00075, discount_factor=0.99, num_actions=4, epsilon=1.0, batch_size=64, input_dims=8)
     dqn_agent.train_model(env, num_episodes, graph)
-else:
-    dqn_agent.test(env, num_episodes, file_type, file, graph)
+
+if __name__ == "__main__":
+    main()
