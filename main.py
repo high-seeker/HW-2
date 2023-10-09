@@ -192,7 +192,7 @@ def main():
     num_episodes = 100
     graph = True
 
-    dqn_agent = Agent(lr=0.00075, discount_factor=0.99, num_actions=4, epsilon=1.0, batch_size=64, input_dims=8)
+    dqn_agent = Agent(lr=0.0007, discount_factor=0.99, num_actions=4, epsilon=1.0, batch_size=64, input_dims=8)
     dqn_agent.train_model(env, num_episodes, graph)
 
 if __name__ == "__main__":
